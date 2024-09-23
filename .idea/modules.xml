@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/Assignment 1 - Password Manager/Assignment 1 - Password Manager.iml" filepath="$PROJECT_DIR$/Assignment 1 - Password Manager/Assignment 1 - Password Manager.iml" />
+      <module fileurl="file://$PROJECT_DIR$/CSDS344-Computer-Security.iml" filepath="$PROJECT_DIR$/CSDS344-Computer-Security.iml" />
+    </modules>
+  </component>
+</project>
