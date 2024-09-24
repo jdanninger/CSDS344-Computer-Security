@@ -3,9 +3,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileWriter;
+import java.io.*;
 import java.security.SecureRandom;
 import java.security.spec.KeySpec;
 import java.util.Base64;
@@ -111,6 +109,7 @@ public class PasswordManager {
         return new String(decrypted);
     }
 
+    // this handles the adding new passwords
     private void addPassword(SecretKey key) throws Exception {
         Scanner scanner = new Scanner(System.in);
         System.out.print("Enter label for password: ");
@@ -118,6 +117,36 @@ public class PasswordManager {
         System.out.print("Enter password to store: ");
         String password = scanner.nextLine();
         String encryptedPassword = encrypt(password, key);
+
+        // remove existing entry
+        File tempFile = new File(passwordFile.getAbsolutePath() + ".tmp");
+        BufferedReader reader = new BufferedReader(new FileReader(passwordFile));
+        BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile));
+        String currentLine = reader.readLine();
+        while(currentLine != null) {
+            currentLine = currentLine.trim();
+            String nextline = reader.readLine();
+            if (currentLine.split(":")[0].equals(label)){
+                currentLine = nextline;
+                continue;
+            }
+            if (nextline == null) {
+                writer.write(currentLine);
+                currentLine = nextline;
+                continue;
+            }
+            writer.write(currentLine+System.lineSeparator());
+            currentLine = nextline;
+        }
+        if (passwordFile.delete()) {
+            tempFile.renameTo(passwordFile);
+        } else {
+            System.out.println("could not properly add new password");
+            System.exit(1);
+        }
+        writer.close();
+
+        // add entry
         FileWriter fr = new FileWriter(passwordFile, true);
         fr.write(System.lineSeparator() + label+":"+encryptedPassword);
         fr.close();
@@ -160,8 +189,10 @@ public class PasswordManager {
         }
     }
 
-
     public static void main(String[] args) throws Exception {
+
+
+
         PasswordManager pm = new PasswordManager();
         pm.promtUser();
     }
