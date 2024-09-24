@@ -4,6 +4,7 @@ import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.security.SecureRandom;
 import java.security.spec.KeySpec;
@@ -22,35 +23,41 @@ public class PasswordManager {
         if (!passwordFile.exists()) {
             System.out.println("No password file detected. Creating a new password file.");
             createPasswordFile(userPassword);
+        } else {
+            validatePassword(userPassword);
         }
         String saltString = getSaltString();
         SecretKey key = deriveKey(userPassword, saltString);
-        System.out.println("a : Add Password");
-        System.out.println("r : Read Password");
-        System.out.println("q : Quit");
-        System.out.print("Enter Choice: ");
-        String mode = scanner.nextLine();
-        System.out.println(decrypt(encrypt("asadf", key), key));
+        while(true) {
+            System.out.println("a : Add Password");
+            System.out.println("r : Read Password");
+            System.out.println("q : Quit");
+            System.out.print("Enter Choice: ");
+            String mode = scanner.nextLine();
 
-        switch (mode) {
-            case "a":
-                addPassword(key);
-                break;
-            case "r":
-                getPassword(key);
-                break;
-            case "q":
-                System.exit(0);
-            default:
-                System.out.println("Invalid input");
+            switch (mode) {
+                case "a" -> addPassword(key);
+                case "r" -> getPassword(key);
+                case "q" -> {System.out.println("Quitting"); System.exit(0);}
+                default -> System.out.println("Invalid input");
+            }
+            System.out.println();
         }
-
     }
 
+
+    // gets salt stored in password file
     private String getSaltString() throws Exception {
         Scanner scanner = new Scanner(passwordFile);
         return scanner.nextLine().split(":")[0];
     }
+
+    // gets has stored in password file
+    private String getHash() throws Exception {
+        Scanner scanner = new Scanner(passwordFile);
+        return scanner.nextLine().split(":")[1];
+    }
+
 
     // creates a new password file
     private void createPasswordFile(String password) throws Exception {
@@ -104,34 +111,54 @@ public class PasswordManager {
         return new String(decrypted);
     }
 
-    private void addPassword(SecretKey key) {
-
+    private void addPassword(SecretKey key) throws Exception {
+        Scanner scanner = new Scanner(System.in);
+        System.out.print("Enter label for password: ");
+        String label = scanner.nextLine();
+        System.out.print("Enter password to store: ");
+        String password = scanner.nextLine();
+        String encryptedPassword = encrypt(password, key);
+        FileWriter fr = new FileWriter(passwordFile, true);
+        fr.write(System.lineSeparator() + label+":"+encryptedPassword);
+        fr.close();
     }
 
     private void getPassword(SecretKey key) {
-
+        Scanner scanner = new Scanner(System.in);
+        System.out.print("Enter label for password: ");
+        String label = scanner.nextLine();
+        try {
+            String encryptedPassword = getCiperFromLabel(label);
+            String decryptedPassword = decrypt(encryptedPassword, key);
+            System.out.println("Found: " + decryptedPassword);
+        } catch (Exception e) {
+            System.out.println("Error, label not found");
+        }
     }
 
+    // finds the text associated with a label
+    private String getCiperFromLabel(String label) throws Exception {
+        Scanner scanner = new Scanner(passwordFile);
+        scanner.nextLine();
+        while (scanner.hasNext()) {
+            String currLine = scanner.nextLine();
+            String currLabel = currLine.split(":")[0];
+            if (currLabel.equals(label)) {
+                return currLine.split(":")[1];
+            }
+        }
+        throw new Exception();
+    }
 
-
-
-
-    // readPassword (label)
-
-    // quitProgram()
-
-    // login(password) --> gets the key
-
-    // getSalt() --> gets the salt
-
-    // getCipher(label)
-
-
-
-
-
-
-
+    private void validatePassword(String password) throws Exception{
+        String storedHash = getHash();
+        String storedSalt = getSaltString();
+        String inputHash = generateHash(password, storedSalt);
+        if (!storedHash.equals(inputHash)) {
+            System.out.println("Invalid Password");
+            System.exit(0);
+        }
+    }
 
 
     public static void main(String[] args) throws Exception {
